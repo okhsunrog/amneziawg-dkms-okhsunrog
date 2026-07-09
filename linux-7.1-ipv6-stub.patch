@@ -1,0 +1,32 @@
+Provide ipv6_stub compat for Linux >= 7.1
+
+Linux 7.1 removed the ipv6_stub indirection layer (include/net/ipv6_stubs.h
+is gone); ip6_dst_lookup_flow() is now declared directly in <net/ipv6.h>
+with a static-inline -EAFNOSUPPORT fallback when CONFIG_IPV6 is disabled.
+In-tree wireguard was converted to call it directly. Recreate a minimal
+ipv6_stub so socket.c keeps compiling unmodified on both old and new
+kernels.
+
+--- a/compat/compat.h
++++ b/compat/compat.h
+@@ -105,6 +105,20 @@
+ static const struct ipv6_stub_type *ipv6_stub = &ipv6_stub_impl;
+ #endif
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0)
++#include <net/ipv6.h>
++struct ipv6_stub_type {
++	struct dst_entry *(*ipv6_dst_lookup_flow)(struct net *net,
++						  const struct sock *sk,
++						  struct flowi6 *fl6,
++						  const struct in6_addr *final_dst);
++};
++static const struct ipv6_stub_type ipv6_stub_impl __attribute__((unused)) = {
++	.ipv6_dst_lookup_flow = ip6_dst_lookup_flow
++};
++static const struct ipv6_stub_type *ipv6_stub __attribute__((unused)) = &ipv6_stub_impl;
++#endif
++
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0) && IS_ENABLED(CONFIG_IPV6) && !defined(ISRHEL7)
+ #include <net/addrconf.h>
+ static inline bool ipv6_mod_enabled(void)
