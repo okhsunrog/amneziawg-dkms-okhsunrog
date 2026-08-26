@@ -1,24 +1,28 @@
 # Maintainer: okhsunrog <d3g3v3@gmail.com>
 # Based on amneziawg-dkms by Vladislav Minakov <v@minakov.pro>
-# Fork carrying a compat patch for Linux >= 7.1 (ipv6_stub removal)
+# Fork carrying compat patches for Linux >= 7.1 (ipv6_stub removal) and
+# >= 7.2 (udp_tunnel struct sock API, strncpy() removal)
 
 pkgname=amneziawg-dkms-okhsunrog
-pkgdesc="AmneziaWG kernel module (DKMS), patched to build against Linux >= 7.1"
+pkgdesc="AmneziaWG kernel module (DKMS), patched to build against Linux >= 7.1/7.2"
 url="https://github.com/amnezia-vpn/amneziawg-linux-kernel-module"
 arch=("x86_64")
 pkgver=1.0.20260611
-pkgrel=1
+pkgrel=2
 license=('GPLv2')
 provides=("AMNEZIAWG-MODULE=${pkgver}" "amneziawg-dkms=${pkgver}")
 conflicts=("amneziawg-dkms")
 source=("amneziawg-dkms-$pkgver.tar.gz::https://github.com/amnezia-vpn/amneziawg-linux-kernel-module/archive/refs/tags/v${pkgver}.tar.gz"
-        "linux-7.1-ipv6-stub.patch")
+        "linux-7.1-ipv6-stub.patch"
+        "linux-7.2-udp-tunnel-sock.patch")
 sha512sums=('3a99b7812b86087aa6f2c0af02a1c43aa6f540d025a1613d484930a99d3589c4ba2e6c2fb7f1b941357bf13855a56a220ff7c0688b22359f954b4dc689db0fdc'
-            '58e16e765a229b1982b195ca8937f46acfb9d357f2a2e61c9aff87dfb0f31600b20e69b661d061290ba0b495b56e70b12885a4f336f7f6f4599b965fe41bb847')
+            '58e16e765a229b1982b195ca8937f46acfb9d357f2a2e61c9aff87dfb0f31600b20e69b661d061290ba0b495b56e70b12885a4f336f7f6f4599b965fe41bb847'
+            '471ede6bf9e8e42919d77cd40680fd0e416ff2c54795aad823563b48cf0e3174fb3956e146c96c8fd777eb2d81d6083518b19c2aea204a00f24f63dcfbf11163')
 
 prepare() {
 cd "${srcdir}/amneziawg-linux-kernel-module-${pkgver}/src"
 patch -Np1 -i "${srcdir}/linux-7.1-ipv6-stub.patch"
+patch -Np1 -i "${srcdir}/linux-7.2-udp-tunnel-sock.patch"
 }
 
 package() {

@@ -1,7 +1,7 @@
 pkgbase = amneziawg-dkms-okhsunrog
-	pkgdesc = AmneziaWG kernel module (DKMS), patched to build against Linux >= 7.1
+	pkgdesc = AmneziaWG kernel module (DKMS), patched to build against Linux >= 7.1/7.2
 	pkgver = 1.0.20260611
-	pkgrel = 1
+	pkgrel = 2
 	url = https://github.com/amnezia-vpn/amneziawg-linux-kernel-module
 	arch = x86_64
 	license = GPLv2
@@ -10,8 +10,10 @@ pkgbase = amneziawg-dkms-okhsunrog
 	conflicts = amneziawg-dkms
 	source = amneziawg-dkms-1.0.20260611.tar.gz::https://github.com/amnezia-vpn/amneziawg-linux-kernel-module/archive/refs/tags/v1.0.20260611.tar.gz
 	source = linux-7.1-ipv6-stub.patch
+	source = linux-7.2-udp-tunnel-sock.patch
 	sha512sums = 3a99b7812b86087aa6f2c0af02a1c43aa6f540d025a1613d484930a99d3589c4ba2e6c2fb7f1b941357bf13855a56a220ff7c0688b22359f954b4dc689db0fdc
 	sha512sums = 58e16e765a229b1982b195ca8937f46acfb9d357f2a2e61c9aff87dfb0f31600b20e69b661d061290ba0b495b56e70b12885a4f336f7f6f4599b965fe41bb847
+	sha512sums = 471ede6bf9e8e42919d77cd40680fd0e416ff2c54795aad823563b48cf0e3174fb3956e146c96c8fd777eb2d81d6083518b19c2aea204a00f24f63dcfbf11163
 
 pkgname = amneziawg-dkms-okhsunrog
 	depends = dkms

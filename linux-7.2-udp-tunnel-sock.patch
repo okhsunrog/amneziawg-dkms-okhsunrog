@@ -1,0 +1,69 @@
+Compat for Linux >= 7.2: udp_tunnel sock API and strncpy() removal
+
+Linux 7.2 changed setup_udp_tunnel_sock() and udp_tunnel_sock_release()
+to take a struct sock * instead of a struct socket * (in-tree wireguard
+now passes new4->sk / new6->sk). Add wrappers in compat.h so socket.c
+keeps compiling unmodified on both old and new kernels.
+
+Linux 7.2 also removed strncpy() from the kernel entirely. The two uses
+in netlink.c copy a bounded prefix of a string whose length was already
+validated (< INET{,6}_ADDRSTRLEN) and which cannot contain a NUL before
+the '/' found by strchr(), so memcpy() is an exact equivalent. Include
+<linux/string.h> explicitly while at it, as upstream v3.1 does.
+
+--- a/compat/compat.h
++++ b/compat/compat.h
+@@ -119,6 +119,25 @@
+ static const struct ipv6_stub_type *ipv6_stub __attribute__((unused)) = &ipv6_stub_impl;
+ #endif
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(7, 2, 0)
++/* Linux 7.2 changed setup_udp_tunnel_sock()/udp_tunnel_sock_release() to
++ * take struct sock * instead of struct socket *. Wrap them so socket.c can
++ * keep passing the struct socket it gets from udp_sock_create(). */
++#include <net/udp_tunnel.h>
++static inline void compat_setup_udp_tunnel_sock(struct net *net,
++						struct socket *sock,
++						struct udp_tunnel_sock_cfg *cfg)
++{
++	setup_udp_tunnel_sock(net, sock->sk, cfg);
++}
++#define setup_udp_tunnel_sock compat_setup_udp_tunnel_sock
++static inline void compat_udp_tunnel_sock_release(struct socket *sock)
++{
++	udp_tunnel_sock_release(sock->sk);
++}
++#define udp_tunnel_sock_release compat_udp_tunnel_sock_release
++#endif
++
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0) && IS_ENABLED(CONFIG_IPV6) && !defined(ISRHEL7)
+ #include <net/addrconf.h>
+ static inline bool ipv6_mod_enabled(void)
+--- a/netlink.c
++++ b/netlink.c
+@@ -12,6 +12,7 @@
+ #include "messages.h"
+ #include "uapi/wireguard.h"
+ #include <linux/if.h>
++#include <linux/string.h>
+ #include <net/genetlink.h>
+ #include <net/sock.h>
+ #include <crypto/utils.h>
+@@ -162,7 +163,7 @@
+ 	if (slash - prefix_str >= INET_ADDRSTRLEN)
+ 		return -EINVAL;
+ 
+-	strncpy(addr_str, prefix_str, slash - prefix_str);
++	memcpy(addr_str, prefix_str, slash - prefix_str);
+ 	addr_str[slash - prefix_str] = '\0';
+ 
+ 	ret = kstrtoint(slash + 1, 10, &prefix->prefix_len);
+@@ -221,7 +222,7 @@
+ 	if (slash - prefix_str >= INET6_ADDRSTRLEN)
+ 		return -EINVAL;
+ 
+-	strncpy(addr_str, prefix_str, slash - prefix_str);
++	memcpy(addr_str, prefix_str, slash - prefix_str);
+ 	addr_str[slash - prefix_str] = '\0';
+ 
+ 	ret = kstrtoint(slash + 1, 10, &prefix->prefix_len);
